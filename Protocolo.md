@@ -37,6 +37,15 @@ En el proyecto, el proceso puede representarse de la siguiente manera:
 ![Proceso de transmisión UART](imagenes/transmision_uart.png)
 
 Al tratarse de una comunicación asíncrona, UART no necesita una señal de reloj compartida entre los dos dispositivos. Para identificar el comienzo y el final de cada unidad de información se utilizan bits de inicio y de parada.
+**Figura 4. Comunicación asíncrona entre dos sistemas.**
+
+![Comunicación asíncrona](imagenes/comunicacion_asincrona.png)
+Una transmisión UART se organiza en una trama que contiene los elementos necesarios para que el receptor pueda identificar y recibir correctamente los datos. La trama comienza con un bit de inicio, continúa con los bits de datos y puede incluir un bit de paridad. Finalmente, se utilizan uno o más bits de parada.
+
+**Figura 5. Formato de una trama UART.**
+
+![Formato de trama UART](imagenes/Formato_UART.png)
+
 
 ### 2.3 Ventajas para el proyecto
 

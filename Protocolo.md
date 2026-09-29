@@ -18,7 +18,7 @@ En la conexión entre las dos FPGA, la salida de transmisión de una UART se con
 
 ![Conexión entre las dos UART](imagenes/conexion_uart.png)
 
-UART permite realizar comunicación en diferentes sentidos: **simplex**, cuando la información viaja en una sola dirección; **half-duplex**, cuando ambos dispositivos pueden transmitir, pero no al mismo tiempo; y **full-duplex**, cuando ambos dispositivos pueden transmitir y recibir simultáneamente.
+UART permite realizar comunicación en diferentes sentidos: **simplex**, cuando la información viaja en una sola dirección; **half-duplex**, cuando ambos dispositivos pueden transmitir, pero no al mismo tiempo; y **full-duplex**, cuando ambos dispositivos pueden transmitir y recibir simultáneamente. Ya que se desea transmitir la información del juego tanto de la FPGA1 a la FPGA2 y viceversa al mismo tiempo, el tipo de la conexión empleada es **full-duplex**.
 
 **Figura 2. Tipos de comunicación según la dirección de transmisión.**
 

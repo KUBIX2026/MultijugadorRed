@@ -2,23 +2,23 @@
 
 ## 1. Objetivo
 
-Establecer las características técnicas y la estructura de datos para la comunicación bidireccional entre las dos FPGA del proyecto multijugador. 
+Establecer las características de la comunicación serial entre las dos FPGA para el modo multijugador. 
 
-La comunicación permitirá que las dos consolas (arquitectura *Peer-to-Peer*) intercambien la información necesaria en tiempo real para que los jugadores puedan participar en una misma partida sin latencia perceptible, sincronizando eventos de hardware, físicas y estados.
+La idea de esta interfaz es permitir que las dos consolas (conectadas punto a punto, sin que una sea maestra sobre la otra) intercambien datos en tiempo real para que ambos jugadores estén en la misma partida sin *lag* ni desincronización en la pantalla.
 
 ## 2. Comunicación mediante UART
 
 ### 2.1 Características generales
 
-UART (Universal Asynchronous Receiver-Transmitter) es un método de comunicación serial asíncrona. Para la comunicación se utilizan principalmente tres líneas físicas de conexión entre las placas: **TX**, encargada de transmitir la información; **RX**, encargada de recibirla; y una línea común de **GND** para igualar las referencias de voltaje.
+Para este módulo usaremos el protocolo UART (Universal Asynchronous Receiver-Transmitter). Para la conexión física solo se necesitan tres líneas entre las placas: **TX** para transmitir, **RX** para recibir y **GND** para compartir la misma referencia de tierra entre ambas FPGAs.
 
-En la conexión entre las dos FPGA, la salida de transmisión de una UART se conecta con la entrada de recepción de la otra. De esta manera, la línea TX de la primera FPGA se conecta con RX de la segunda, y viceversa.
+La conexión es cruzada: el pin TX de la FPGA 1 va al pin RX de la FPGA 2, y el TX de la FPGA 2 se conecta al RX de la FPGA 1.
 
 **Figura 1. Conexión entre las dos interfaces UART.**
 
 ![Conexión entre las dos UART](imagenes/conexion_uart.png)
 
-UART permite realizar comunicación en diferentes sentidos: **simplex**, cuando la información viaja en una sola dirección; **half-duplex**, cuando ambos dispositivos pueden transmitir, pero no al mismo tiempo; y **full-duplex**, cuando ambos dispositivos pueden transmitir y recibir simultáneamente. Ya que se desea transmitir la información del juego tanto de la FPGA1 a la FPGA2 y viceversa al mismo tiempo para evitar ventajas de tiempo de reacción, el tipo de conexión empleada es estrictamente **full-duplex**.
+Como necesitamos que la información del juego viaje en ambos sentidos al mismo tiempo (mientras el Jugador 1 envía su posición, debe recibir la posición del Jugador 2), configuraremos los módulos en modo **full-duplex**.
 
 **Figura 2. Tipos de comunicación según la dirección de transmisión.**
 
@@ -26,9 +26,9 @@ UART permite realizar comunicación en diferentes sentidos: **simplex**, cuando 
 
 ### 2.2 Funcionamiento y Sincronización
 
-UART permite transmitir información que se encuentra representada en paralelo (en el bus del SoC RISC-V) convirtiéndola en una secuencia de bits que puede viajar de forma serial. En el dispositivo receptor, esta secuencia se recibe y se vuelve a organizar para obtener nuevamente los datos.
+UART toma los datos que vienen en paralelo desde el bus del procesador y los convierte en un flujo serial de bits para enviarlos por el cable. En el lado que recibe, el módulo vuelve a armar el dato en paralelo para que el firmware lo pueda leer.
 
-En el proyecto, el proceso puede representarse de la siguiente manera:
+El flujo del dato es el siguiente:
 
 **Datos en paralelo → UART 1 (RTL) → TX → RX → UART 2 (RTL) → Datos en paralelo**
 
@@ -36,15 +36,15 @@ En el proyecto, el proceso puede representarse de la siguiente manera:
 
 ![Proceso de transmisión UART](imagenes/transmision_uart.png)
 
-Al tratarse de una comunicación asíncrona, UART no necesita una señal de reloj (SCLK) compartida entre los dos dispositivos. Para garantizar la sincronización, ambas FPGA se configurarán con un *Baud Rate* idéntico de **115,200 bps**, calculado a partir de los divisores de reloj en Verilog.
+Al ser una comunicación asíncrona no hay una línea de reloj externa que conecte ambas FPGAs. La sincronización se logra ajustando el mismo *Baud Rate* en el código de ambas placas (usaremos **115,200 bps**, que se obtiene dividiendo la frecuencia del reloj base de la FPGA).
 
-Para identificar el comienzo y el final de cada unidad de información se utilizan bits de inicio y de parada.
+Para delimitar los datos, cada envío lleva sus bits de inicio (Start) y parada (Stop).
 
 **Figura 4. Comunicación asíncrona entre dos sistemas.**
 
 ![Comunicación asíncrona](imagenes/comunicacion_asincrona.png)
 
-Una transmisión UART se organiza en una trama que contiene los elementos necesarios para que el receptor pueda identificar y recibir correctamente los datos. La trama comienza con un bit de inicio, continúa con los bits de datos y finaliza con uno o más bits de parada. Para optimizar la velocidad en este proyecto, se omitirá el bit de paridad.
+La trama básica incluye el bit de inicio, los bits de datos y el bit de parada. Para mantener la transmisión lo más rápida posible y no meter latencia al juego, no usaremos bit de paridad.
 
 **Figura 5. Formato de una trama UART.**
 
@@ -52,38 +52,40 @@ Una transmisión UART se organiza en una trama que contiene los elementos necesa
 
 ### 2.3 Ventajas para el proyecto
 
-Entre las características que hacen conveniente el uso de UART frente a alternativas como SPI o I2C para este proyecto se encuentran:
+Elegimos UART sobre SPI o I2C por las siguientes razones:
 
-* **Arquitectura descentralizada:** No requiere una línea de reloj compartida entre las FPGA, evitando el modelo Maestro-Esclavo y permitiendo que ambas consolas sean 100% independientes.
-* **Simplicidad de Hardware:** Utiliza una conexión muy sencilla basada únicamente en tres cables (TX, RX, GND).
-* **Ausencia de colisiones:** Permite comunicación bidireccional continua y sin cuellos de botella mediante el modo full-duplex.
+* **Arquitectura sin maestro:** No necesitamos que una FPGA controle el reloj de la otra. Las dos placas son independientes.
+* **Cableado sencillo:** Solo se necesitan 3 pines (TX, RX y GND).
+* **Sin colisiones:** Al ser full-duplex, cada sentido tiene su propio cable dedicado, así que se evita que los datos choquen.
 
 ## 3. Estructura de la Trama de Datos (Payload)
 
-Para evitar la desincronización por pérdida de bytes individuales, la información no se enviará de forma suelta. La transmisión se estructurará en paquetes cerrados de **4 bytes** que encapsulan el estado de la partida y las coordenadas espaciales (no se transmitirán datos gráficos).
+Para evitar que se pierdan datos si un byte se corrompe en el cable, organizamos la información en paquetes fijos de **4 bytes**. No se envían imágenes ni gráficos, solo posiciones y estados.
 
 | Byte | Función | Descripción | Ejemplo (Hex) |
 | :--- | :--- | :--- | :--- |
-| **1** | Cabecera (Start) | Identificador fijo de inicio de trama para alinear al receptor. | `0xAA` |
-| **2** | Comando / ID | Indica qué tipo de información se está enviando. | `0x01` |
-| **3** | Dato 1 (Ej. Coordenada X) | Primer parámetro del comando. | `0x2F` |
-| **4** | Dato 2 (Ej. Coordenada Y) | Segundo parámetro del comando. | `0x78` |
+| **1** | Cabecera (Start) | Byte fijo para indicarle al receptor que aquí inicia un mensaje. | `0xAA` |
+| **2** | Comando / ID | Indica qué tipo de dato o evento se está enviando. | `0x01` |
+| **3** | Dato 1 | Primer parámetro (por ejemplo, coordenada X). | `0x2F` |
+| **4** | Dato 2 | Segundo parámetro (por ejemplo, coordenada Y). | `0x78` |
 
-*Nota sobre tolerancia a fallos: Si el receptor lee un primer byte distinto a la cabecera predefinida (`0xAA`), descartará el paquete completo para evitar corromper las físicas del juego.*
+*Nota: Si la FPGA recibe un paquete cuyo primer byte no sea `0xAA`, descarta ese paquete para no mover los elementos a posiciones erróneas.*
 
-## 4. Diccionario de Comandos
+## 4. Comandos
 
-Los comandos (enviados en el Byte 2 de la trama) serán utilizados para indicar qué tipo de información específica están procesando las FPGA. Se establecen los siguientes identificadores base:
+Usaremos el Byte 2 para definir qué tipo de mensaje se está mandando entre las FPGAs:
 
-* **`0x01` - Posición Local:** Envía las coordenadas del jugador dueño de la consola. (Bytes 3 y 4 representan X e Y).
-* **`0x02` - Posición Remota:** Actualiza las coordenadas del contrincante.
-* **`0x03` - Posición Pelota/Proyectil:** Sincroniza la ubicación de elementos móviles neutrales.
-* **`0xF0` - Estado de Partida:** Control del flujo del juego. (El Byte 3 indica el evento: `0x01` Iniciar, `0x02` Pausar, `0x03` Game Over, `0x04` Reinicio).
-* **`0xF1` - Sincronización de Red:** *Handshake* utilizado para establecer la conexión inicial entre las placas antes del renderizado.
+* **`0x01` - Posición Local:** Envía la posición del jugador en la consola actual.
+* **`0x02` - Posición Remota:** Actualiza la posición del rival en la pantalla.
+* **`0x03` - Elementos neutros:** Coordenadas de objetos compartidos (como la pelota).
+* **`0xF0` - Estado del juego:** Eventos como inicio, pausa, punto o fin de partida.
+* **`0xF1` - Sincronización:** Mensaje inicial (*handshake*) para verificar que ambas FPGAs están conectadas antes de empezar la partida.
 
-## 5. Pendientes Técnicos (Plan de Acción)
+## 5. Pendientes
 
-* Diseñar la máquina de estados algorítmica (ASM) para los módulos Transmisor (TX) y Receptor (RX).
-* Calcular e implementar el divisor de reloj en Verilog para alcanzar con exactitud los 115,200 bps.
-* Programar las rutinas en lenguaje C dentro del firmware para el empaquetado y desempaquetado de los 4 bytes a través de los registros CSR del procesador FemtoRV32.
-* Estructurar el *Testbench* para simular las formas de onda de transmisión y validar la recepción en GTKWave.
+* Revisar bien los juegos que vamos a implementar para definir los datos exactos que necesita mandar cada FPGA.
+* Definir cuántos bits requerimos por cada variable (posiciones, puntaje, etc.).
+* Calcular e implementar el divisor de reloj en Verilog para que ambas FPGAs queden exactamente a 115,200 bps y no pierdan sincronización.
+* Diseñar la máquina de estados (FSM) de los módulos transmisor y receptor.
+* Escribir las funciones en C en el firmware para empaquetar y leer los 4 bytes usando los registros CSR.
+* Hacer las simulaciones en GTKWave para verificar que la transmisión serial responda bien antes de probarlo en el hardware real.

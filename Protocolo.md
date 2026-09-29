@@ -2,7 +2,7 @@
 
 ## 1. Objetivo
 
-Este documento establece las características generales de la comunicación entre las dos FPGA del proyecto multijugador.
+Establecer las características generales de la comunicación entre las dos FPGA del proyecto multijugador.
 
 La comunicación permitirá que las dos FPGA intercambien la información necesaria para que los jugadores puedan participar en una misma partida.
 

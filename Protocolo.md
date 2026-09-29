@@ -83,7 +83,7 @@ Usaremos el Byte 2 para definir qué tipo de mensaje se está mandando entre las
 
 ## 5. Pendientes
 
-* Revisar bien los juegos que vamos a implementar para definir los datos exactos que necesita mandar cada FPGA.
+* Revisar los juegos que vamos a implementar para definir los datos exactos que necesita mandar cada FPGA.
 * Definir cuántos bits requerimos por cada variable (posiciones, puntaje, etc.).
 * Calcular e implementar el divisor de reloj en Verilog para que ambas FPGAs queden exactamente a 115,200 bps y no pierdan sincronización.
 * Diseñar la máquina de estados (FSM) de los módulos transmisor y receptor.

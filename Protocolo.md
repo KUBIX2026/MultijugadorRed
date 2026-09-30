@@ -37,10 +37,10 @@ flowchart LR
         GND2[GND]
     end
 
-    SC1 -- "Reloj (Control)" --> SC2
-    SO1 -- "Transmite" --> SI2
-    SI1 <-- "Recibe" --- SO2
-    GND1 <--- "Referencia 0V" ---> GND2
+    SC1 -->|"Reloj (Control)"| SC2
+    SO1 -->|"Transmite"| SI2
+    SO2 -->|"Recibe"| SI1
+    GND1 <-->|"Referencia 0V"| GND2
 ```
 
 Para que ninguno de los dos jugadores tenga ventaja de latencia, la comunicación es **full-duplex síncrona** (ambos mandan y reciben al mismo tiempo).
@@ -61,21 +61,21 @@ El intercambio se hace como un trueque simultáneo:
 ```mermaid
 flowchart LR
     subgraph FPGA Maestra
-        C1[Código en C\nFemtoRV32] -->|Escribe byte| TX1(Shift Register 8-bit)
-        TX1 -->|Genera Reloj| SC_Pin((Pin SC))
-        TX1 -->|Saca Bits| SO_Pin((Pin SO))
-        SI_Pin((Pin SI)) -->|Lee Bits| TX1
+        C1["Código en C\nFemtoRV32"] -->|"Escribe byte"| TX1("Shift Register 8-bit")
+        TX1 -->|"Genera Reloj"| SC_Pin(("Pin SC"))
+        TX1 -->|"Saca Bits"| SO_Pin(("Pin SO"))
+        SI_Pin(("Pin SI")) -->|"Lee Bits"| TX1
     end
 
-    SC_Pin -.-> SC_E((Pin SC))
-    SO_Pin -.-> SI_E((Pin SI))
-    SI_Pin <-.- SO_E((Pin SO))
+    SC_Pin -.-> SC_E(("Pin SC"))
+    SO_Pin -.-> SI_E(("Pin SI"))
+    SO_E -.-> SI_Pin
 
     subgraph FPGA Esclava
-        SC_E --> TX2(Shift Register 8-bit)
-        SI_E -->|Entran Bits| TX2
-        TX2 -->|Salen Bits| SO_E
-        TX2 -->|Lee byte| C2[Código en C\nFemtoRV32]
+        SC_E --> TX2("Shift Register 8-bit")
+        SI_E -->|"Entran Bits"| TX2
+        TX2 -->|"Salen Bits"| SO_E
+        TX2 -->|"Lee byte"| C2["Código en C\nFemtoRV32"]
     end
 ```
 

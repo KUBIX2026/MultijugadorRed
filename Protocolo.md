@@ -4,21 +4,26 @@
 
 Establecer las características de la comunicación serial entre las dos FPGA para el modo multijugador. 
 
-La idea de esta interfaz es permitir que las dos consolas (conectadas punto a punto, sin que una sea maestra sobre la otra) intercambien datos en tiempo real para que ambos jugadores estén en la misma partida sin *lag* ni desincronización en la pantalla.
+A diferencia de una red de computadores convencional, implementaremos una arquitectura basada en consolas retro clásicas (inspirada en el Cable Link de la Game Boy de Nintendo). Esto implica una topología **Maestro - Esclavo**, donde una consola (la Principal) administra el ritmo de la comunicación y la otra (la Invitada) responde a sus solicitudes para intercambiar los datos en tiempo real y sin *lag*.
 
-## 2. Comunicación mediante UART
+## 2. Comunicación mediante SIO (Serial I/O)
 
 ### 2.1 Características generales
 
-Para este módulo usaremos el protocolo UART (Universal Asynchronous Receiver-Transmitter). Para la conexión física solo se necesitan tres líneas entre las placas: **TX** para transmitir, **RX** para recibir y **GND** para compartir la misma referencia de tierra entre ambas FPGAs.
+Para este módulo usaremos el protocolo SIO síncrono. A diferencia de un SPI comercial, este diseño no usa cable de selección (Chip Select), simplificando la conexión a solo cuatro cables físicos entre las placas: 
 
-La conexión es cruzada: el pin TX de la FPGA 1 va al pin RX de la FPGA 2, y el TX de la FPGA 2 se conecta al RX de la FPGA 1.
+* **SC (Serial Clock):** La señal de reloj.
+* **SO (Serial Out):** Salida de datos.
+* **SI (Serial In):** Entrada de datos.
+* **GND:** Tierra común para igualar voltajes.
 
-**Figura 1. Conexión entre las dos interfaces UART.**
+La conexión de datos es cruzada: el pin SO de la FPGA Maestra va al pin SI de la FPGA Esclava, y el SO de la Esclava va al SI de la Maestra. El reloj (SC) solo viaja de la Maestra hacia la Esclava.
 
-![Conexión entre las dos UART](imagenes/conexion_uart.png)
+**Figura 1. Conexión física entre las dos interfaces (Estilo Nintendo).**
 
-Como necesitamos que la información del juego viaje en ambos sentidos al mismo tiempo (mientras el Jugador 1 envía su posición, debe recibir la posición del Jugador 2), configuraremos los módulos en modo **full-duplex**.
+![Conexión entre las consolas](imagenes/conexion_sio.png)
+
+Como necesitamos que los botones y físicas de ambos jugadores viajen al mismo tiempo, esta arquitectura es estrictamente **full-duplex síncrona**.
 
 **Figura 2. Tipos de comunicación según la dirección de transmisión.**
 
@@ -26,66 +31,62 @@ Como necesitamos que la información del juego viaje en ambos sentidos al mismo 
 
 ### 2.2 Funcionamiento y Sincronización
 
-UART toma los datos que vienen en paralelo desde el bus del procesador y los convierte en un flujo serial de bits para enviarlos por el cable. En el lado que recibe, el módulo vuelve a armar el dato en paralelo para que el firmware lo pueda leer.
+La magia de este protocolo está en que se basa en un **Registro de Desplazamiento (Shift Register) de 8 bits** en cada FPGA. 
 
-El flujo del dato es el siguiente:
+El flujo de datos funciona como un trueque simultáneo:
+1. El código en C de la FPGA Maestra ordena enviar un dato.
+2. El hardware (Verilog) de la Maestra genera exactamente 8 pulsos por el cable `SC`.
+3. Por cada pulso de reloj, un bit sale por `SO` y al mismo tiempo un bit entra por `SI`.
+4. Al terminar los 8 pulsos, ambas consolas han intercambiado exactamente 1 byte al mismo tiempo.
 
-**Datos en paralelo → UART 1 (RTL) → TX → RX → UART 2 (RTL) → Datos en paralelo**
+**Datos en paralelo → Shift Register (Maestra) ↔ SC / SI / SO ↔ Shift Register (Esclava) → Datos en paralelo**
 
-**Figura 3. Proceso de transmisión de datos mediante UART.**
+**Figura 3. Proceso de intercambio de datos simultáneo.**
 
-![Proceso de transmisión UART](imagenes/transmision_uart.png)
+![Proceso de transmisión SIO](imagenes/transmision_sio.png)
 
-Al ser una comunicación asíncrona no hay una línea de reloj externa que conecte ambas FPGAs. La sincronización se logra ajustando el mismo *Baud Rate* en el código de ambas placas (usaremos **115,200 bps**, que se obtiene dividiendo la frecuencia del reloj base de la FPGA).
+Al ser una comunicación síncrona, no necesitamos bits de inicio ni de parada. La Esclava sabe exactamente cuándo leer el dato porque obedece a los flancos de subida y bajada de la señal de reloj `SC` que le manda la Maestra.
 
-Para delimitar los datos, cada envío lleva sus bits de inicio (Start) y parada (Stop).
+**Figura 4. Reloj y datos síncronos.**
 
-**Figura 4. Comunicación asíncrona entre dos sistemas.**
+![Comunicación síncrona](imagenes/comunicacion_sincrona.png)
 
-![Comunicación asíncrona](imagenes/comunicacion_asincrona.png)
+### 2.3 Justificación técnica de la arquitectura
 
-La trama básica incluye el bit de inicio, los bits de datos y el bit de parada. Para mantener la transmisión lo más rápida posible y no meter latencia al juego, no usaremos bit de paridad.
+Implementar este diseño SIO en lugar de UART nos da estas ventajas a nivel de hardware:
 
-**Figura 5. Formato de una trama UART.**
-
-![Formato de trama UART](imagenes/Formato_UART.png)
-
-### 2.3 Ventajas para el proyecto
-
-Elegimos UART sobre SPI o I2C por las siguientes razones:
-
-* **Arquitectura sin maestro:** No necesitamos que una FPGA controle el reloj de la otra. Las dos placas son independientes.
-* **Cableado sencillo:** Solo se necesitan 3 pines (TX, RX y GND).
-* **Sin colisiones:** Al ser full-duplex, cada sentido tiene su propio cable dedicado, así que se evita que los datos choquen.
+* **Hardware mucho más simple:** No hay que adivinar los tiempos de los bits ni hacer *oversampling* (sobremuestreo). El diseño en Verilog se reduce a un registro de desplazamiento puro.
+* **Intercambio 1 a 1 (Trueque):** Garantiza que si la consola 1 envía su posición, forzosamente recibe la posición de la consola 2 en el mismo ciclo exacto de reloj.
+* **Frecuencia estable:** Todo se mueve al ritmo exacto que dicte el divisor de reloj de la FPGA Maestra, eliminando errores de desfase.
 
 ## 3. Estructura de la Trama de Datos (Payload)
 
-Para evitar que se pierdan datos si un byte se corrompe en el cable, organizamos la información en paquetes fijos de **4 bytes**. No se envían imágenes ni gráficos, solo posiciones y estados.
+Como el hardware intercambia la información de a 1 byte (8 bits) a la vez, organizamos los datos del juego en paquetes fijos de **4 bytes**. El procesador Maestro mandará a ejecutar la transferencia 4 veces seguidas para completar un paquete. No se envían imágenes ni gráficos, solo posiciones y estados lógicos.
 
 | Byte | Función | Descripción | Ejemplo (Hex) |
 | :--- | :--- | :--- | :--- |
-| **1** | Cabecera (Start) | Byte fijo para indicarle al receptor que aquí inicia un mensaje. | `0xAA` |
+| **1** | Cabecera | Byte fijo para indicarle al software que aquí inicia un mensaje. | `0xAA` |
 | **2** | Comando / ID | Indica qué tipo de dato o evento se está enviando. | `0x01` |
 | **3** | Dato 1 | Primer parámetro (por ejemplo, coordenada X). | `0x2F` |
 | **4** | Dato 2 | Segundo parámetro (por ejemplo, coordenada Y). | `0x78` |
 
-*Nota: Si la FPGA recibe un paquete cuyo primer byte no sea `0xAA`, descarta ese paquete para no mover los elementos a posiciones erróneas.*
+*Nota: Si el firmware recibe un paquete cuyo primer byte no sea `0xAA`, se descarta para no mover los elementos de la pantalla a posiciones erróneas.*
 
 ## 4. Comandos
 
 Usaremos el Byte 2 para definir qué tipo de mensaje se está mandando entre las FPGAs:
 
-* **`0x01` - Posición Local:** Envía la posición del jugador en la consola actual.
+* **`0x01` - Posición Local:** Envía la posición del jugador.
 * **`0x02` - Posición Remota:** Actualiza la posición del rival en la pantalla.
 * **`0x03` - Elementos neutros:** Coordenadas de objetos compartidos (como la pelota).
 * **`0xF0` - Estado del juego:** Eventos como inicio, pausa, punto o fin de partida.
-* **`0xF1` - Sincronización:** Mensaje inicial (*handshake*) para verificar que ambas FPGAs están conectadas antes de empezar la partida.
+* **`0xF1` - Sincronización:** Mensaje inicial (*handshake*) para verificar que el cable está conectado antes de empezar a renderizar.
 
 ## 5. Pendientes
 
-* Revisar los juegos que vamos a implementar para definir los datos exactos que necesita mandar cada FPGA.
+* Revisar los juegos que vamos a implementar para definir los datos exactos que necesita mandar cada placa.
 * Definir cuántos bits requerimos por cada variable (posiciones, puntaje, etc.).
-* Calcular e implementar el divisor de reloj en Verilog para que ambas FPGAs queden exactamente a 115,200 bps y no pierdan sincronización.
-* Diseñar la máquina de estados (FSM) de los módulos transmisor y receptor.
-* Escribir las funciones en C en el firmware para empaquetar y leer los 4 bytes usando los registros CSR.
-* Hacer las simulaciones en GTKWave para verificar que la transmisión serial responda bien antes de probarlo en el hardware real.
+* Diseñar el bloque RTL (Verilog) del Registro de Desplazamiento (Shift Register).
+* Implementar el generador de reloj en la FPGA Maestra para la señal `SC` y hacer que la FPGA Esclava se sincronice solo con esa entrada externa.
+* Escribir el código en C (firmware) de la FPGA Maestra para que haga un sondeo continuo (*polling*) de la Esclava y así evitar *lag* en los controles del Jugador 2.
+* Hacer las simulaciones en GTKWave verificando que la señal de reloj haga exactamente los 8 ciclos requeridos por cada byte antes de probar en el hardware real.

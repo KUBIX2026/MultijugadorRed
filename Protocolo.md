@@ -43,6 +43,8 @@ flowchart LR
     GND1 <-->|"Referencia 0V"| GND2
 ```
 
+![Texto alternativo](images/Conexión física entre las consolas.png)
+
 Para que ninguno de los dos jugadores tenga ventaja de latencia, la comunicación es **full-duplex síncrona** (ambos mandan y reciben al mismo tiempo).
 
 ### 2.2 Funcionamiento: El Shift Register

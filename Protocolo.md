@@ -21,29 +21,9 @@ La conexión va cruzada: el pin `SO` de la Maestra se conecta al `SI` de la Escl
 
 **Figura 1. Conexión física entre las consolas.**
 
-```mermaid
-flowchart LR
-    subgraph FPGA_1["FPGA 1 (Maestra)"]
-        SC1[SC]
-        SO1[SO]
-        SI1[SI]
-        GND1[GND]
-    end
 
-    subgraph FPGA_2["FPGA 2 (Esclava)"]
-        SC2[SC]
-        SI2[SI]
-        SO2[SO]
-        GND2[GND]
-    end
+<img width="3585" height="3080" alt="Conexión física entre las consolas" src="https://github.com/user-attachments/assets/1a83531a-4291-4ee3-8bb9-ada2816f3d5c" />
 
-    SC1 -->|"Reloj (Control)"| SC2
-    SO1 -->|"Transmite"| SI2
-    SO2 -->|"Recibe"| SI1
-    GND1 <-->|"Referencia 0V"| GND2
-```
-
-![Texto alternativo](images/Conexión física entre las consolas.png)
 
 Para que ninguno de los dos jugadores tenga ventaja de latencia, la comunicación es **full-duplex síncrona** (ambos mandan y reciben al mismo tiempo).
 

@@ -40,26 +40,8 @@ El intercambio se hace como un trueque simultáneo:
 
 **Figura 2. Proceso de intercambio de datos simultáneo (RTL).**
 
-```mermaid
-flowchart LR
-    subgraph FPGA Maestra
-        C1["Código en C\nFemtoRV32"] -->|"Escribe byte"| TX1("Shift Register 8-bit")
-        TX1 -->|"Genera Reloj"| SC_Pin(("Pin SC"))
-        TX1 -->|"Saca Bits"| SO_Pin(("Pin SO"))
-        SI_Pin(("Pin SI")) -->|"Lee Bits"| TX1
-    end
+<img width="8192" height="2592" alt="Proceso de Intercambio" src="https://github.com/user-attachments/assets/1de75602-ea1f-4333-b206-ca85148adaab" />
 
-    SC_Pin -.-> SC_E(("Pin SC"))
-    SO_Pin -.-> SI_E(("Pin SI"))
-    SO_E -.-> SI_Pin
-
-    subgraph FPGA Esclava
-        SC_E --> TX2("Shift Register 8-bit")
-        SI_E -->|"Entran Bits"| TX2
-        TX2 -->|"Salen Bits"| SO_E
-        TX2 -->|"Lee byte"| C2["Código en C\nFemtoRV32"]
-    end
-```
 
 **Figura 3. Diagrama de tiempos por cada ráfaga de reloj.**
 

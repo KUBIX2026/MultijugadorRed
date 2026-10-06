@@ -60,6 +60,9 @@ sequenceDiagram
     Note over SC, SI: Fin de ráfaga (El reloj SC se detiene)
 ```
 
+**Figura 3.1. Diagrama de tiempos detallado del protocolo SIO.**
+<img width="1266" height="562" alt="SIO Timing Chart" src="imagenes/sio_timing_chart.png" />
+
 ### 2.3 Diferencias con el SPI normal
 
 Aunque este diseño se parece mucho al protocolo SPI de toda la vida, usamos la lógica de Nintendo por dos razones prácticas para el proyecto:

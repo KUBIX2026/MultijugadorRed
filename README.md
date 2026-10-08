@@ -1,7 +1,7 @@
 # Multijugador SIO (Maestro-Esclavo)
 Módulo de comunicación síncrona Maestro-Esclavo basado en el protocolo SIO (Serial I/O) para la interconexión multijugador entre FPGAs. Proyecto integrador de consola retro SoC (RISC-V) - Digital 1.
 
-### Diagrama de flujo del controlador multijugador de Red 
+## Diagrama de flujo del controlador multijugador de Red 
 Se desceribe el funcionamiento del sistema de comunicación multijugador implementado entre dos FPGA mediante un protocolo SIO síncrono con arquitectura Maestro–Esclavo. El propósito del controlador es permitir el intercambio de información asociada al estado del juego entre dos consolas con pantallas independientes, manteniendo la sincronización de los jugadores durante la ejecución del videojuego.
 ![Texto alternativo](imagenes/Diagrama_Multijugador_Red.png)
 
@@ -126,8 +126,6 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 ### 6.4 Equipo de `UART` y otros protocolos (`I2C_Master`, `spi_flash_ctrl`)
 *   **Dificultad:** Todos los módulos de comunicación necesitan conectar cables físicos a los pines de expansión de la FPGA. Si no nos hablamos, podríamos terminar asignando los mismos pines en el archivo de restricciones (`.cst`) para el TX del UART o el I2C, y para el reloj `SC` de nuestro SIO, causando un cortocircuito lógico.
 *   **Solución:** Al abandonar nosotros el protocolo UART y usar SIO, ya liberamos carga en el bus y evitamos duplicar módulos. Para solucionar el tema físico, crearemos un documento compartido del "Pinout" general del proyecto para reservar oficialmente nuestros 3 pines físicos (`SC`, `SI`, `SO`) y asegurar que ningún otro grupo los intente usar.
-
-
 
 
 
@@ -273,3 +271,9 @@ Ciclo 6: M2 ↔ S2
 Ciclo 7: M1 ↔ S1
 Ciclo 8: M0 ↔ S0
 
+
+```
+---
+## 8. Diagrama de Bloques
+
+![Segundo flanco de subida](diagramaBloques.png)

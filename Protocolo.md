@@ -43,22 +43,7 @@ El intercambio se hace como un trueque simultáneo:
 <img width="8192" height="2592" alt="Proceso de Intercambio" src="https://github.com/user-attachments/assets/1de75602-ea1f-4333-b206-ca85148adaab" />
 
 
-**Figura 3. Diagrama de tiempos por cada ráfaga de reloj.**
 
-```mermaid
-sequenceDiagram
-    participant SC as Reloj (SC)
-    participant SO as Salida (SO)
-    participant SI as Entrada (SI)
-
-    Note over SC, SI: La Maestra arranca la ráfaga (1 Byte = 8 ciclos)
-    SC->>SO: Flanco de Bajada (Saca Bit 7)
-    SC->>SI: Flanco de Subida (Lee Bit 7)
-    SC->>SO: Flanco de Bajada (Saca Bit 6)
-    SC->>SI: Flanco de Subida (Lee Bit 6)
-    Note over SC, SI: ... (El trueque se repite hasta el Bit 0) ...
-    Note over SC, SI: Fin de ráfaga (El reloj SC se detiene)
-```
 
 
 ### 2.3 Diferencias con el SPI normal

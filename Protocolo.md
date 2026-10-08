@@ -145,7 +145,7 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 
 La comunicación serial del Game Boy se realiza mediante un enlace físico entre las dos consolas. En el caso del sistema multijugador, las dos Game Boy se conectan mediante el Cable Link, permitiendo el intercambio de información entre ambas.
 
-![Dos consolas Game Boy conectadas](imagenes/2Nintendos_GameBoy_Conectadas.jpg)
+![Dos consolas Game Boy conectadas](imagenes/1Dosconsolas.png)
 
 **Figura 5.** Dos consolas Game Boy conectadas mediante el Cable Link.
 

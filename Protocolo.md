@@ -134,3 +134,149 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 ### 6.4 Equipo de `UART` y otros protocolos (`I2C_Master`, `spi_flash_ctrl`)
 *   **Dificultad:** Todos los módulos de comunicación necesitan conectar cables físicos a los pines de expansión de la FPGA. Si no nos hablamos, podríamos terminar asignando los mismos pines en el archivo de restricciones (`.cst`) para el TX del UART o el I2C, y para el reloj `SC` de nuestro SIO, causando un cortocircuito lógico.
 *   **Solución:** Al abandonar nosotros el protocolo UART y usar SIO, ya liberamos carga en el bus y evitamos duplicar módulos. Para solucionar el tema físico, crearemos un documento compartido del "Pinout" general del proyecto para reservar oficialmente nuestros 3 pines físicos (`SC`, `SI`, `SO`) y asegurar que ningún otro grupo los intente usar.
+
+
+
+
+
+## 7. Funcionamiento del SIO: intercambio de datos bit a bit
+
+### 7.1 Conexión entre las consolas Game Boy
+
+La comunicación serial del Game Boy se realiza mediante un enlace físico entre las dos consolas. En el caso del sistema multijugador, las dos Game Boy se conectan mediante el Cable Link, permitiendo el intercambio de información entre ambas.
+
+![Dos consolas Game Boy conectadas](imagenes/2Nintendos_GameBoy_Conectadas.jpg)
+
+**Figura 5.** Dos consolas Game Boy conectadas mediante el Cable Link.
+
+El Cable Link permite establecer la conexión eléctrica necesaria para la comunicación serial entre las dos consolas. El conector utilizado dispone de varios contactos, cada uno asociado a una señal del sistema de comunicación.
+
+![Pines del Cable Link](imagenes/Pines_Cable_Link.png)
+
+**Figura 6.** Contactos del Cable Link utilizados para establecer la conexión entre las consolas.
+
+---
+
+### 7.2 Diagrama de tiempos del SIO
+
+El funcionamiento de la comunicación serial puede observarse mediante el diagrama de tiempos del SIO. En este diagrama se muestra la relación entre la señal de reloj `SCK`, las señales de salida `SOUT` y entrada `SIN`, y el registro de desplazamiento `SB`.
+
+![Diagrama de tiempos SIO](imagenes/Imagen_manual.png)
+
+**Figura 7.** Diagrama de tiempos de la comunicación serial SIO.
+
+En la comunicación mostrada en el diagrama, la señal `SCK` comienza en nivel alto. El intercambio de cada bit se realiza mediante dos flancos del reloj:
+
+- **Flanco de bajada:** el contenido del registro `SB` se desplaza hacia la izquierda y el bit más significativo (`SB7`) se presenta en la salida `SOUT`.
+- **Flanco de subida:** se lee el valor presente en la entrada `SIN` y este se incorpora en la posición `SB0` del registro.
+
+Este proceso se repite hasta completar los ocho bits de la transferencia.
+
+---
+
+### 7.3 Estado inicial de los registros
+
+Antes de comenzar la transferencia, cada dispositivo posee un registro `SB` de 8 bits que contiene el dato que desea transmitir.
+
+Para representar el intercambio entre las dos FPGA, se pueden identificar los bits del registro del Master como:
+
+`M7, M6, M5, M4, M3, M2, M1, M0`
+
+y los bits del registro del Slave como:
+
+`S7, S6, S5, S4, S3, S2, S1, S0`.
+
+En el estado inicial, ambos registros contienen los datos que cada FPGA desea transmitir.
+
+![Estado inicial del intercambio SIO](imagenes/1.png)
+
+**Figura 8.** Estado inicial de los registros de desplazamiento y de las señales de comunicación.
+
+En este punto todavía no se ha producido ningún desplazamiento. El reloj `SCK` se encuentra en nivel alto y los bits más significativos de ambos registros (`M7` y `S7`) serán los primeros bits que participarán en el intercambio.
+
+---
+
+### 7.4 Primer flanco de bajada: desplazamiento y salida
+
+Cuando la señal `SCK` cambia de nivel alto a nivel bajo se produce el primer flanco de bajada.
+
+En este momento, cada registro `SB` se desplaza una posición hacia la izquierda. El bit más significativo de cada registro se presenta en la salida correspondiente.
+
+Por lo tanto:
+
+- `M7` sale del registro del Master y se presenta en `SOUT`.
+- `S7` sale del registro del Slave y se presenta en su `SOUT`.
+- Los demás bits se desplazan una posición hacia la izquierda.
+- La posición `SB0` queda disponible para recibir el bit proveniente del otro dispositivo.
+
+![Flanco de bajada y desplazamiento](imagenes/2.png)
+
+**Figura 9.** Primer flanco de bajada: desplazamiento de los registros y presentación de los bits más significativos en las líneas de salida.
+
+Después de este desplazamiento, los bits que estaban en `M6` y `S6` pasan a ocupar las posiciones `M7` y `S7`, respectivamente. Al mismo tiempo, los bits `M7` y `S7` se encuentran disponibles en las líneas de comunicación.
+
+---
+
+### 7.5 Primer flanco de subida: recepción del bit
+
+Después del flanco de bajada, la señal `SCK` vuelve a cambiar de nivel bajo a nivel alto.
+
+En este flanco de subida, cada dispositivo lee el valor presente en su entrada `SIN`. El bit recibido se incorpora en la posición `SB0` que había quedado disponible durante el desplazamiento anterior.
+
+De esta manera:
+
+- El Master recibe el bit que el Slave había colocado en su salida.
+- El Slave recibe el bit que el Master había colocado en su salida.
+- Ambos dispositivos realizan la recepción simultáneamente.
+
+![Flanco de subida y recepción](imagenes/3.png)
+
+**Figura 10.** Primer flanco de subida: lectura de los bits presentes en las entradas y almacenamiento en `SB0`.
+
+Por lo tanto, la transferencia es bidireccional. Mientras el Master transmite un bit al Slave, el Slave transmite simultáneamente un bit al Master.
+
+---
+
+### 7.6 Segundo flanco de bajada
+
+Una vez realizada la recepción del primer bit, comienza el siguiente ciclo de transferencia.
+
+Cuando `SCK` vuelve a pasar de nivel alto a nivel bajo, los registros se desplazan nuevamente una posición hacia la izquierda. El siguiente bit que se encontraba en cada registro pasa a ocupar la posición de salida.
+
+En este segundo ciclo, los bits que participan en la transferencia son los que originalmente correspondían a `M6` y `S6`.
+
+![Segundo flanco de bajada](imagenes/4.png)
+
+**Figura 11.** Segundo flanco de bajada: nuevo desplazamiento de los registros y presentación del siguiente bit.
+
+El procedimiento es el mismo que en el primer ciclo: se desplazan los registros, se presenta el siguiente bit en la salida y se prepara nuevamente la posición `SB0` para recibir el bit proveniente del otro dispositivo.
+
+---
+
+### 7.7 Segundo flanco de subida
+
+Después del segundo flanco de bajada, la señal `SCK` vuelve a pasar de nivel bajo a nivel alto.
+
+En este flanco se realiza nuevamente la lectura de las entradas `SIN`. Los bits presentes en las líneas de comunicación son incorporados en las posiciones `SB0` de los respectivos registros.
+
+![Segundo flanco de subida](imagenes/5.png)
+
+**Figura 12.** Segundo flanco de subida: recepción del segundo bit intercambiado.
+
+A partir de este punto, el mismo procedimiento continúa para los bits restantes. Cada ciclo está compuesto por un flanco de bajada, en el que se realiza el desplazamiento y se presenta el siguiente bit, y un flanco de subida, en el que se recibe el bit proveniente del otro dispositivo.
+
+---
+
+### 7.8 Intercambio completo de un byte
+
+El procedimiento anterior se repite hasta completar los ocho bits de los registros. Los bits se intercambian en el siguiente orden:
+
+```text
+Ciclo 1: M7 ↔ S7
+Ciclo 2: M6 ↔ S6
+Ciclo 3: M5 ↔ S5
+Ciclo 4: M4 ↔ S4
+Ciclo 5: M3 ↔ S3
+Ciclo 6: M2 ↔ S2
+Ciclo 7: M1 ↔ S1
+Ciclo 8: M0 ↔ S0

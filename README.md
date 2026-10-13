@@ -71,19 +71,7 @@ Como el hardware intercambia de a 1 byte (8 bits) a la vez, desde el código en 
 | **3** | Dato 1 | Primer parámetro (ej. Coordenada X, o un botón presionado). | `0x2F` |
 | **4** | Dato 2 | Segundo parámetro (ej. Coordenada Y, o estado). | `0x78` |
 
-**Figura 4. Visualización del paquete de datos.**
 
-```mermaid
-classDiagram
-    class Trama_Multijugador {
-        +Byte 1 : Cabecera [0xAA]
-        +Byte 2 : Comando / ID del objeto
-        +Byte 3 : Parámetro 1 (Ej. Posición X)
-        +Byte 4 : Parámetro 2 (Ej. Posición Y)
-    }
-```
-
-Para evitar que los objetos salten por la pantalla si un dato llega mal, revisamos el primer byte. Si el paquete llega y no empieza con la cabecera `0xAA`, el código en C asume que hubo un error y descarta el paquete completo.
 
 ## 4. Comandos y la solución al "Polling"
 

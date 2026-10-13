@@ -262,6 +262,3 @@ Ciclo 8: M0 ↔ S0
 
 ```
 ---
-## 8. Diagrama de Bloques
-
-![Segundo flanco de subida](diagramaBloques.png)

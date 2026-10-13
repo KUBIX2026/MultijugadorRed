@@ -245,7 +245,7 @@ A partir de este punto, el mismo procedimiento continúa para los bits restantes
 
 ---
 
-### 7.8 Intercambio completo de un byte
+### 7.Intercambio completo de un byte
 
 El procedimiento anterior se repite hasta completar los ocho bits de los registros. Los bits se intercambian en el siguiente orden:
 
@@ -260,5 +260,17 @@ Ciclo 7: M1 ↔ S1
 Ciclo 8: M0 ↔ S0
 
 
+
+
+
+
+
 ```
+### DATAPATH
+```text
+D
+```
+
+
+
 ---

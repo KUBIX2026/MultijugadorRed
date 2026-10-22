@@ -268,9 +268,6 @@ Ciclo 8: M0 ↔ S0
 ```
 ### DATAPATH
 ```text
-<img width="1322" height="459" alt="datapath1 drawio" src="https://github.com/user-attachments/assets/3f96b723-dd97-4727-97e7-f146ab1583c6" />
-
-```
 
 
 

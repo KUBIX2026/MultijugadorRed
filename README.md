@@ -267,8 +267,7 @@ Ciclo 8: M0 ↔ S0
 
 ```
 ### DATAPATH
-```text
-<img width="1322" height="459" alt="imagen" src="https://github.com/user-attachments/assets/cedb2f0e-fa89-40a1-81e1-b3ac42d20d92" />
+<img width="1322" height="459" alt="imagen" src="https://github.com/user-attachments/assets/cda2af71-daff-47e9-8db3-d76e79a41b2e" />
 
 
 

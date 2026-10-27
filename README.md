@@ -257,7 +257,7 @@ Ciclo 8: M0 ↔ S0
 
 
 
-
+<img width="946" height="142" alt="image" src="https://github.com/user-attachments/assets/a2a970bb-6578-4d49-9133-a6ee20b7013d" />
 
 
 ```

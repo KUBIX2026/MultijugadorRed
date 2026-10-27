@@ -45,11 +45,6 @@ El intercambio se hace como un trueque simultáneo:
 4. En cada **subida** del reloj, las dos FPGAs leen lo que haya en `SI` y lo guardan.
 5. Cuando se acaban los 8 pulsos, el reloj se detiene. En ese momento, ya se intercambió un byte completo entre las dos consolas.
 
-**Figura 2. Proceso de intercambio de datos simultáneo (RTL).**
-
-<img width="8192" height="2592" alt="Proceso de Intercambio" src="https://github.com/user-attachments/assets/1de75602-ea1f-4333-b206-ca85148adaab" />
-
-
 
 
 

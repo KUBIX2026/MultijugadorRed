@@ -81,6 +81,14 @@ En el Byte 2 usaremos estos comandos básicos:
 * **`0xF0`:** Eventos del juego (inicio, pausa, Game Over).
 * **`0xF1`:** Mensaje de conexión (*handshake*) para verificar que el cable está puesto antes de arrancar.
 
+### 4.1 Tabla de comandos de comunicación para Pong
+
+La siguiente tabla resume los comandos definidos para el intercambio de información entre la FPGA Maestra y la FPGA Esclava, incluyendo la función de cada comando, los datos transportados y el sentido principal de la comunicación.
+
+![Comandos de comunicación para el juego Pong](imagenes/Comandos_pong.png)
+
+**Figura 2.** Comandos de comunicación para el juego Pong entre la Maestra y la Esclava.
+
 ## 5. Pendientes técnicos
 
 * Revisar los requerimientos del juego final para ver si nos alcanzan 8 bits por coordenada, o si toca ajustar el tamaño de la trama.

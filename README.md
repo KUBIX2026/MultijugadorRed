@@ -127,7 +127,8 @@ y los bits del registro del Slave como:
 
 En el estado inicial, ambos registros contienen los datos que cada FPGA desea transmitir.
 
-![Estado inicial del intercambio SIO](imagenes/1.png)
+![Estado inicial del intercambio SIO](imagenes/1(1).jpeg)
+
 
 **Figura 8.** Estado inicial de los registros de desplazamiento y de las señales de comunicación.
 

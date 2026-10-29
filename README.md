@@ -169,7 +169,7 @@ De esta manera:
 - El Slave recibe el bit que el Master había colocado en su salida.
 - Ambos dispositivos realizan la recepción simultáneamente.
 
-![Flanco de subida y recepción](imagenes/3(3).jpeg)
+![Flanco de subida y recepción](imagenes/3(3).png)
 
 **Figura 10.** Primer flanco de subida: lectura de los bits presentes en las entradas y almacenamiento en `SB0`.
 
@@ -185,7 +185,7 @@ Cuando `SCK` vuelve a pasar de nivel alto a nivel bajo, los registros se desplaz
 
 En este segundo ciclo, los bits que participan en la transferencia son los que originalmente correspondían a `M6` y `S6`.
 
-![Segundo flanco de bajada](imagenes/4(4).jpeg)
+![Segundo flanco de bajada](imagenes/4(4).png)
 
 **Figura 11.** Segundo flanco de bajada: nuevo desplazamiento de los registros y presentación del siguiente bit.
 
@@ -199,7 +199,7 @@ Después del segundo flanco de bajada, la señal `SCK` vuelve a pasar de nivel b
 
 En este flanco se realiza nuevamente la lectura de las entradas `SIN`. Los bits presentes en las líneas de comunicación son incorporados en las posiciones `SB0` de los respectivos registros.
 
-![Segundo flanco de subida](imagenes/5(5).jpeg)
+![Segundo flanco de subida](imagenes/5(5).png)
 
 **Figura 12.** Segundo flanco de subida: recepción del segundo bit intercambiado.
 

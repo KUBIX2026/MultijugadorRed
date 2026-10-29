@@ -130,13 +130,7 @@ La comunicación serial del Game Boy se realiza mediante un enlace físico entre
 
 **Figura 5.** Dos consolas Game Boy conectadas mediante el Cable Link.
 
-El Cable Link permite establecer la conexión eléctrica necesaria para la comunicación serial entre las dos consolas. El conector utilizado dispone de varios contactos, cada uno asociado a una señal del sistema de comunicación.
 
-![Pines del Cable Link](imagenes/Pines_Cable_Link.png)
-
-**Figura 6.** Contactos del Cable Link utilizados para establecer la conexión entre las consolas.
-
----
 
 ### 7.2 Diagrama de tiempos del SIO
 

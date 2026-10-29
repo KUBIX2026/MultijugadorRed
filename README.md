@@ -47,14 +47,6 @@ El intercambio se hace como un trueque simultáneo:
 
 
 
-
-### 2.3 Diferencias con el SPI normal
-
-Aunque este diseño se parece mucho al protocolo SPI de toda la vida, usamos la lógica de Nintendo por dos razones prácticas para el proyecto:
-
-* **No usamos pin de selección (CS):** Como solo vamos a conectar dos consolas, no necesitamos un cable extra para "despertar" a la Esclava. Su hardware siempre está listo y reacciona de inmediato apenas siente que el reloj `SC` se empieza a mover.
-* **Intercambio 1 a 1:** El SPI comercial permite mandar ráfagas sueltas. Nuestro diseño obliga a que si la Maestra manda un byte, recibe otro de la Esclava en el mismo ciclo, sí o sí.
-
 ## 3. Estructura de la Trama (Payload)
 
 Como el hardware intercambia de a 1 byte (8 bits) a la vez, desde el código en C vamos a agrupar la información del juego en paquetes fijos de **4 bytes**. La Maestra mandará a activar el hardware 4 veces seguidas por cada actualización de pantalla. Ojo: por aquí no mandamos gráficos, solo posiciones y variables de estado para no saturar la conexión.
@@ -89,40 +81,12 @@ La siguiente tabla resume los comandos definidos para el intercambio de informac
 
 **Figura 2.** Comandos de comunicación para el juego Pong entre la Maestra y la Esclava.
 
-## 5. Pendientes técnicos
-
-* Revisar los requerimientos del juego final para ver si nos alcanzan 8 bits por coordenada, o si toca ajustar el tamaño de la trama.
-* Escribir el código en Verilog para el divisor de reloj en la Maestra, tomando el reloj base de la tarjeta para sacar una señal `SC` estable (por ejemplo, a unos 100 kHz).
-* Diseñar la máquina de estados del Shift Register para que cuadre exactamente con las subidas y bajadas del reloj.
-* Mapear las direcciones de memoria en el procesador para poder leer y escribir los datos desde C.
-* Armar el `while(1)` en el firmware de la Maestra para que haga el *polling* de la Esclava en cada ciclo del juego.
-* Hacer un *Testbench* en GTKWave conectando una Maestra y una Esclava simuladas. Hay que verificar que los 8 ciclos de reloj se cumplan perfecto y la línea quede estable antes de probarlo físicamente en las placas.
-  
-## 6. Coordinación e Impacto en otros módulos
-
-Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo interactúa de forma diferente con el resto del sistema. A continuación, detallamos cómo podríamos afectar a los demás grupos de desarrollo y el plan de mitigación para cada caso:
-
-### 6.1 Equipo de `software_juegos`
-*   **Dificultad:** En un diseño normal *Peer-to-Peer*, el código del juego sería exactamente igual en ambas FPGAs. Ahora, la lógica cambia: la consola Maestra tiene que estar pidiendo datos (haciendo *polling*), mientras que la Esclava solo responde. Si les pasamos el hardware así en crudo, les vamos a complicar el ciclo de programación del juego.
-*   **Solución:** Les vamos a entregar una librería en C (un archivo `.h`) con funciones de alto nivel ya listas (ej. `sincronizar_multijugador()`). La idea es que ellos solo llamen a esa función en su ciclo principal y nuestra librería se encargue por debajo de saber quién es el Maestro y quién el Esclavo, entregándoles las variables de las coordenadas ya listas para usar.
-
-### 6.2 Equipos de periféricos (`nes_controller.v`, `ps2_keyboard.v`, `ps2_mouse`)
-*   **Dificultad:** Nuestro módulo SIO es el puente que manda los botones presionados o las posiciones del mouse al otro jugador. Si el grupo de NES o teclado decide cambiar el orden de los datos (por ejemplo, que el botón "A" ya no es el bit 0 sino el bit 2), la consola rival va a interpretar comandos erróneos y arruinará la partida.
-*   **Solución:** Vamos a definir un "Contrato de Datos" estricto. Acordaremos un mapa de bits fijo e inamovible para el Byte 3 y Byte 4 de nuestra trama. Nuestro módulo SIO no va a procesar qué botón se oprimió, solo tomará el registro en crudo que ellos nos pasen desde su hardware y lo mandaremos al otro lado de forma transparente.
-
-### 6.3 Equipos visuales (`Display-Driver`, `MAX7219-`)
-*   **Dificultad:** El protocolo SIO detiene al procesador mientras genera los 8 pulsos de reloj del intercambio. Si esta pequeña pausa ocurre justo en el momento en que la FPGA está dibujando la pantalla o la matriz LED, se pueden generar parpadeos (*flickering*) o cortes en la imagen (*tearing*).
-*   **Solución:** Coordinaremos con ellos y con los de software para que la función de actualizar el multijugador se llame exclusivamente durante el *Vertical Blanking* (VBLANK). Este es el milisegundo exacto en el que la pantalla termina de dibujar un cuadro y el sistema está inactivo, evitando así cualquier interrupción visual.
-
-### 6.4 Equipo de `UART` y otros protocolos (`I2C_Master`, `spi_flash_ctrl`)
-*   **Dificultad:** Todos los módulos de comunicación necesitan conectar cables físicos a los pines de expansión de la FPGA. Si no nos hablamos, podríamos terminar asignando los mismos pines en el archivo de restricciones (`.cst`) para el TX del UART o el I2C, y para el reloj `SC` de nuestro SIO, causando un cortocircuito lógico.
-*   **Solución:** Al abandonar nosotros el protocolo UART y usar SIO, ya liberamos carga en el bus y evitamos duplicar módulos. Para solucionar el tema físico, crearemos un documento compartido del "Pinout" general del proyecto para reservar oficialmente nuestros 3 pines físicos (`SC`, `SI`, `SO`) y asegurar que ningún otro grupo los intente usar.
 
 
 
-## 7. Funcionamiento del SIO: intercambio de datos bit a bit
+## 5. Funcionamiento del SIO: intercambio de datos bit a bit
 
-### 7.1 Conexión entre las consolas Game Boy
+### 5.1 Conexión entre las consolas Game Boy
 
 La comunicación serial del Game Boy se realiza mediante un enlace físico entre las dos consolas. En el caso del sistema multijugador, las dos Game Boy se conectan mediante el Cable Link, permitiendo el intercambio de información entre ambas.
 
@@ -132,7 +96,7 @@ La comunicación serial del Game Boy se realiza mediante un enlace físico entre
 
 
 
-### 7.2 Diagrama de tiempos del SIO
+### 5.2 Diagrama de tiempos del SIO
 
 El funcionamiento de la comunicación serial puede observarse mediante el diagrama de tiempos del SIO. En este diagrama se muestra la relación entre la señal de reloj `SCK`, las señales de salida `SOUT` y entrada `SIN`, y el registro de desplazamiento `SB`.
 
@@ -149,7 +113,7 @@ Este proceso se repite hasta completar los ocho bits de la transferencia.
 
 ---
 
-### 7.3 Estado inicial de los registros
+### 5.3 Estado inicial de los registros
 
 Antes de comenzar la transferencia, cada dispositivo posee un registro `SB` de 8 bits que contiene el dato que desea transmitir.
 
@@ -171,7 +135,7 @@ En este punto todavía no se ha producido ningún desplazamiento. El reloj `SCK`
 
 ---
 
-### 7.4 Primer flanco de bajada: desplazamiento y salida
+### 5.4 Primer flanco de bajada: desplazamiento y salida
 
 Cuando la señal `SCK` cambia de nivel alto a nivel bajo se produce el primer flanco de bajada.
 
@@ -192,7 +156,7 @@ Después de este desplazamiento, los bits que estaban en `M6` y `S6` pasan a ocu
 
 ---
 
-### 7.5 Primer flanco de subida: recepción del bit
+### 5.5 Primer flanco de subida: recepción del bit
 
 Después del flanco de bajada, la señal `SCK` vuelve a cambiar de nivel bajo a nivel alto.
 
@@ -212,7 +176,7 @@ Por lo tanto, la transferencia es bidireccional. Mientras el Master transmite un
 
 ---
 
-### 7.6 Segundo flanco de bajada
+### 5.6 Segundo flanco de bajada
 
 Una vez realizada la recepción del primer bit, comienza el siguiente ciclo de transferencia.
 
@@ -228,7 +192,7 @@ El procedimiento es el mismo que en el primer ciclo: se desplazan los registros,
 
 ---
 
-### 7.7 Segundo flanco de subida
+### 5.7 Segundo flanco de subida
 
 Después del segundo flanco de bajada, la señal `SCK` vuelve a pasar de nivel bajo a nivel alto.
 
@@ -242,7 +206,7 @@ A partir de este punto, el mismo procedimiento continúa para los bits restantes
 
 ---
 
-### 7.Intercambio completo de un byte
+### 6.Intercambio completo de un byte
 
 El procedimiento anterior se repite hasta completar los ocho bits de los registros. Los bits se intercambian en el siguiente orden:
 
@@ -267,6 +231,37 @@ Ciclo 8: M0 ↔ S0
 <img width="1068" height="459" alt="imagen" src="https://github.com/user-attachments/assets/f205a792-1772-4243-a20d-36d89768fe62" />
 
 
+
+e probarlo físicamente en las placas.
+  
+## 7. Coordinación e Impacto en otros módulos
+
+Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo interactúa de forma diferente con el resto del sistema. A continuación, detallamos cómo podríamos afectar a los demás grupos de desarrollo y el plan de mitigación para cada caso:
+
+### 7.1 Equipo de `software_juegos`
+*   **Dificultad:** En un diseño normal *Peer-to-Peer*, el código del juego sería exactamente igual en ambas FPGAs. Ahora, la lógica cambia: la consola Maestra tiene que estar pidiendo datos (haciendo *polling*), mientras que la Esclava solo responde. Si les pasamos el hardware así en crudo, les vamos a complicar el ciclo de programación del juego.
+*   **Solución:** Les vamos a entregar una librería en C (un archivo `.h`) con funciones de alto nivel ya listas (ej. `sincronizar_multijugador()`). La idea es que ellos solo llamen a esa función en su ciclo principal y nuestra librería se encargue por debajo de saber quién es el Maestro y quién el Esclavo, entregándoles las variables de las coordenadas ya listas para usar.
+
+### 7.2 Equipos de periféricos (`nes_controller.v`, `ps2_keyboard.v`, `ps2_mouse`)
+*   **Dificultad:** Nuestro módulo SIO es el puente que manda los botones presionados o las posiciones del mouse al otro jugador. Si el grupo de NES o teclado decide cambiar el orden de los datos (por ejemplo, que el botón "A" ya no es el bit 0 sino el bit 2), la consola rival va a interpretar comandos erróneos y arruinará la partida.
+*   **Solución:** Vamos a definir un "Contrato de Datos" estricto. Acordaremos un mapa de bits fijo e inamovible para el Byte 3 y Byte 4 de nuestra trama. Nuestro módulo SIO no va a procesar qué botón se oprimió, solo tomará el registro en crudo que ellos nos pasen desde su hardware y lo mandaremos al otro lado de forma transparente.
+
+### 76.3 Equipos visuales (`Display-Driver`, `MAX7219-`)
+*   **Dificultad:** El protocolo SIO detiene al procesador mientras genera los 8 pulsos de reloj del intercambio. Si esta pequeña pausa ocurre justo en el momento en que la FPGA está dibujando la pantalla o la matriz LED, se pueden generar parpadeos (*flickering*) o cortes en la imagen (*tearing*).
+*   **Solución:** Coordinaremos con ellos y con los de software para que la función de actualizar el multijugador se llame exclusivamente durante el *Vertical Blanking* (VBLANK). Este es el milisegundo exacto en el que la pantalla termina de dibujar un cuadro y el sistema está inactivo, evitando así cualquier interrupción visual.
+
+### 7.4 Equipo de `UART` y otros protocolos (`I2C_Master`, `spi_flash_ctrl`)
+*   **Dificultad:** Todos los módulos de comunicación necesitan conectar cables físicos a los pines de expansión de la FPGA. Si no nos hablamos, podríamos terminar asignando los mismos pines en el archivo de restricciones (`.cst`) para el TX del UART o el I2C, y para el reloj `SC` de nuestro SIO, causando un cortocircuito lógico.
+*   **Solución:** Al abandonar nosotros el protocolo UART y usar SIO, ya liberamos carga en el bus y evitamos duplicar módulos. Para solucionar el tema físico, crearemos un documento compartido del "Pinout" general del proyecto para reservar oficialmente nuestros 3 pines físicos (`SC`, `SI`, `SO`) y asegurar que ningún otro grupo los intente usar.
+
+## 8. Pendientes técnicos
+
+* Revisar los requerimientos del juego final para ver si nos alcanzan 8 bits por coordenada, o si toca ajustar el tamaño de la trama.
+* Escribir el código en Verilog para el divisor de reloj en la Maestra, tomando el reloj base de la tarjeta para sacar una señal `SC` estable (por ejemplo, a unos 100 kHz).
+* Diseñar la máquina de estados del Shift Register para que cuadre exactamente con las subidas y bajadas del reloj.
+* Mapear las direcciones de memoria en el procesador para poder leer y escribir los datos desde C.
+* Armar el `while(1)` en el firmware de la Maestra para que haga el *polling* de la Esclava en cada ciclo del juego.
+* Hacer un *Testbench* en GTKWave conectando una Maestra y una Esclava simuladas. Hay que verificar que los 8 ciclos de reloj se cumplan perfecto y la línea quede estable antes d
 
 
 ---

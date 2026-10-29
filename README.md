@@ -28,9 +28,7 @@ La conexión va cruzada: el pin `SO` de la Maestra se conecta al `SI` de la Escl
 
 **Figura 1. Conexión física entre las consolas.**
 
-
-<img width="3585" height="3080" alt="Conexión física entre las consolas" src="https://github.com/user-attachments/assets/1a83531a-4291-4ee3-8bb9-ada2816f3d5c" />
-
+![Conexión física entre las consolas](imagenes/asd.png)
 
 Para que ninguno de los dos jugadores tenga ventaja de latencia, la comunicación es **full-duplex síncrona** (ambos mandan y reciben al mismo tiempo).
 

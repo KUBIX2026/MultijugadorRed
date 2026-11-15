@@ -226,36 +226,36 @@ Ciclo 8: M0 ↔ S0
 
 
 ```
-### DATAPATH
+### 7. DATAPATH
 <img width="1068" height="459" alt="imagen" src="https://github.com/user-attachments/assets/f205a792-1772-4243-a20d-36d89768fe62" />
 
 
 
 e probarlo físicamente en las placas.
   
-## 7. Coordinación e Impacto en otros módulos
+## 8. Coordinación e Impacto en otros módulos
 
 Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo interactúa de forma diferente con el resto del sistema. A continuación, detallamos cómo podríamos afectar a los demás grupos de desarrollo y el plan de mitigación para cada caso:
 
-### 7.1 Equipo de `software_juegos`
+### 8.1 Equipo de `software_juegos`
 *   **Dificultad:** En un diseño normal *Peer-to-Peer*, el código del juego sería exactamente igual en ambas FPGAs. Ahora, la lógica cambia: la consola Maestra tiene que estar pidiendo datos (haciendo *polling*), mientras que la Esclava solo responde. Si les pasamos el hardware así en crudo, les vamos a complicar el ciclo de programación del juego.
 *   **Solución:** Les vamos a entregar una librería en C (un archivo `.h`) con funciones de alto nivel ya listas (ej. `sincronizar_multijugador()`). La idea es que ellos solo llamen a esa función en su ciclo principal y nuestra librería se encargue por debajo de saber quién es el Maestro y quién el Esclavo, entregándoles las variables de las coordenadas ya listas para usar.
 
-### 7.2 Equipos de periféricos (`nes_controller.v`, `ps2_keyboard.v`, `ps2_mouse`)
+### 8.2 Equipos de periféricos (`nes_controller.v`, `ps2_keyboard.v`, `ps2_mouse`)
 *   **Dificultad:** Nuestro módulo SIO es el puente que manda los botones presionados o las posiciones del mouse al otro jugador. Si el grupo de NES o teclado decide cambiar el orden de los datos (por ejemplo, que el botón "A" ya no es el bit 0 sino el bit 2), la consola rival va a interpretar comandos erróneos y arruinará la partida.
 *   **Solución:** Vamos a definir un "Contrato de Datos" estricto. Acordaremos un mapa de bits fijo e inamovible para el Byte 3 y Byte 4 de nuestra trama. Nuestro módulo SIO no va a procesar qué botón se oprimió, solo tomará el registro en crudo que ellos nos pasen desde su hardware y lo mandaremos al otro lado de forma transparente.
 
-### 76.3 Equipos visuales (`Display-Driver`, `MAX7219-`)
+### 8.3 Equipos visuales (`Display-Driver`, `MAX7219-`)
 *   **Dificultad:** El protocolo SIO detiene al procesador mientras genera los 8 pulsos de reloj del intercambio. Si esta pequeña pausa ocurre justo en el momento en que la FPGA está dibujando la pantalla o la matriz LED, se pueden generar parpadeos (*flickering*) o cortes en la imagen (*tearing*).
 *   **Solución:** Coordinaremos con ellos y con los de software para que la función de actualizar el multijugador se llame exclusivamente durante el *Vertical Blanking* (VBLANK). Este es el milisegundo exacto en el que la pantalla termina de dibujar un cuadro y el sistema está inactivo, evitando así cualquier interrupción visual.
 
-### 7.4 Equipo de `UART` y otros protocolos (`I2C_Master`, `spi_flash_ctrl`)
+### 8.4 Equipo de `UART` y otros protocolos (`I2C_Master`, `spi_flash_ctrl`)
 *   **Dificultad:** Todos los módulos de comunicación necesitan conectar cables físicos a los pines de expansión de la FPGA. Si no nos hablamos, podríamos terminar asignando los mismos pines en el archivo de restricciones (`.cst`) para el TX del UART o el I2C, y para el reloj `SC` de nuestro SIO, causando un cortocircuito lógico.
 *   **Solución:** Al abandonar nosotros el protocolo UART y usar SIO, ya liberamos carga en el bus y evitamos duplicar módulos. Para solucionar el tema físico, crearemos un documento compartido del "Pinout" general del proyecto para reservar oficialmente nuestros 3 pines físicos (`SC`, `SI`, `SO`) y asegurar que ningún otro grupo los intente usar.
-  ## 8.Maquina de estados
+  ## 9.Maquina de estados
 <img width="1692" height="1014" alt="imagen" src="https://github.com/user-attachments/assets/96c1d0e1-318e-435b-ad73-8bee07e039c7" />
 
-## 9. Pendientes técnicos
+## 10. Pendientes técnicos
 
 * Revisar los requerimientos del juego final para ver si nos alcanzan 8 bits por coordenada, o si toca ajustar el tamaño de la trama.
 * Escribir el código en Verilog para el divisor de reloj en la Maestra, tomando el reloj base de la tarjeta para sacar una señal `SC` estable (por ejemplo, a unos 100 kHz).

@@ -265,3 +265,37 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 
 
 ---
+## 11. Propuesta de distribución de tareas
+
+Se propone distribuir el desarrollo entre los cuatro integrantes a partir del datapath y de la máquina de estados acordados. Cada responsable implementará su parte en Verilog, documentará las señales utilizadas y verificará su funcionamiento mediante testbenches.
+
+| Integrante | Responsabilidad | Entregables |
+|---|---|---|
+| **Isaías Gallardo** | **Transmisión y conteo de bits.** Implementar la carga paralela de TX, el desplazamiento, la salida serial SO y el contador que identifica el último bit de la transferencia. | `sio_tx.v`, `sio_count.v` y sus testbenches. Verificar carga, reset, habilitaciones, orden MSB primero, transmisión del primer y último bit y activación de `LAST` al completar los 32 bits. |
+| **Julián Gómez** | **Recepción y validación.** Implementar la recepción serial, el almacenamiento de la trama aceptada y las comparaciones de cabecera y comando. Gestionar `RX_PENDING`, `ACK_RX` y `OVERRUN`. | `sio_rx.v` y su testbench. Verificar tramas válidas e inválidas, conservación del resultado anterior y recepción de datos mientras existe una trama pendiente de lectura. |
+| **Dania Pérez** | **Unidad de control.** Traducir a Verilog las FSM del maestro y del esclavo, conservando los estados, las transiciones y las señales del diseño acordado. | `sio_ctrl.v` y su testbench. Verificar la secuencia de estados, las habilitaciones del datapath y el tratamiento de errores y tiempos de espera. |
+| **Cristian Rojas** | **Temporización y sincronización.** Implementar la generación de SC en el maestro, la sincronización de entradas y la detección de flancos en el esclavo. Coordinar la conexión de los bloques. | `sio_timing.v`, su testbench y la interconexión `sio_top.v`. Verificar los eventos `F_DOWN` y `F_UP`, el reposo alto de SC y las señales `GAP_OK` y `TIMEOUT`. |
+
+### Acuerdos de implementación
+
+Antes de programar se definirán los nombres, anchos, polaridades y condiciones de activación de las señales compartidas. Se utilizará una trama de 32 bits formada por cabecera, comando y dos bytes de datos.
+
+Todos los registros utilizarán `clk_sys` local. Los eventos de SC se manejarán mediante habilitaciones: transmisión en la bajada y recepción en la subida. Cualquier cambio que afecte las interfaces o la FSM deberá revisarse con el grupo.
+
+### Integración y verificación conjunta
+
+Cada integrante entregará su módulo acompañado de pruebas y una explicación de sus resultados. Una vez verificadas las partes, los cuatro integrantes participarán en la integración de un maestro y un esclavo simulados.
+
+Las pruebas conjuntas incluirán:
+
+- Intercambio simultáneo de datos en ambos sentidos.
+- Transferencias completas de 32 bits y transmisiones consecutivas.
+- Cabeceras y comandos inválidos.
+- Reinicio durante una transferencia y recuperación del enlace.
+- Recepción pendiente de lectura y activación de `OVERRUN`.
+
+Las formas de onda se revisarán en GTKWave y los testbenches incluirán comprobaciones automáticas. Finalmente, el grupo realizará la síntesis para revisar recursos, advertencias y temporización.
+
+### Evidencias de la contribución individual
+
+Cada integrante mantendrá identificables sus aportes mediante commits, archivos Verilog, testbenches y resultados de simulación. En la sustentación explicará la relación entre sus bloques, las señales de control y las pruebas realizadas.

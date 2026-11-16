@@ -249,12 +249,12 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 ### 8.4 Equipo de `UART` y otros protocolos (`I2C_Master`, `spi_flash_ctrl`)
 *   **Dificultad:** Todos los módulos de comunicación necesitan conectar cables físicos a los pines de expansión de la FPGA. Si no nos hablamos, podríamos terminar asignando los mismos pines en el archivo de restricciones (`.cst`) para el TX del UART o el I2C, y para el reloj `SC` de nuestro SIO, causando un cortocircuito lógico.
 *   **Solución:** Al abandonar nosotros el protocolo UART y usar SIO, ya liberamos carga en el bus y evitamos duplicar módulos. Para solucionar el tema físico, crearemos un documento compartido del "Pinout" general del proyecto para reservar oficialmente nuestros 3 pines físicos (`SC`, `SI`, `SO`) y asegurar que ningún otro grupo los intente usar.
-  ## 9.Maquina de estados
+  ## 11.Maquina de estados
 <img width="1602" height="1064" alt="imagen" src="https://github.com/user-attachments/assets/3c9cd2b3-d701-4f2d-9cb3-d2b7fbab30d6" />
 
 
 
-## 10. Pendientes técnicos
+## 12. Pendientes técnicos
 
 * Revisar los requerimientos del juego final para ver si nos alcanzan 8 bits por coordenada, o si toca ajustar el tamaño de la trama.
 * Escribir el código en Verilog para el divisor de reloj en la Maestra, tomando el reloj base de la tarjeta para sacar una señal `SC` estable (por ejemplo, a unos 100 kHz).
@@ -265,7 +265,7 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 
 
 ---
-## 11. Propuesta de distribución de tareas
+## 13. Propuesta de distribución de tareas
 
 Se propone distribuir el desarrollo entre los cuatro integrantes a partir del datapath y de la máquina de estados acordados. Cada responsable implementará su parte en Verilog, documentará las señales utilizadas y verificará su funcionamiento mediante testbenches.
 

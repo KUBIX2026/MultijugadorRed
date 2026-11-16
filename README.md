@@ -227,11 +227,8 @@ Ciclo 8: M0 ↔ S0
 
 ```
 ### 7. DATAPATH
-<img width="1068" height="459" alt="imagen" src="https://github.com/user-attachments/assets/f205a792-1772-4243-a20d-36d89768fe62" />
+<img width="1978" height="1305" alt="imagen" src="https://github.com/user-attachments/assets/ad1e7e9f-b01e-40fc-808a-cffe1ed3388a" />
 
-
-
-e probarlo físicamente en las placas.
   
 ## 8. Coordinación e Impacto en otros módulos
 

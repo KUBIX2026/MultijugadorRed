@@ -261,11 +261,11 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 ## 12. Pendientes técnicos
 
 * Revisar los requerimientos del juego final para ver si nos alcanzan 8 bits por coordenada, o si toca ajustar el tamaño de la trama.
-* Escribir el código en Verilog para el divisor de reloj en la Maestra, tomando el reloj base de la tarjeta para sacar una señal `SC` estable (por ejemplo, a unos 100 kHz).
+* Escribir el código en Verilog para el divisor de reloj en el Maestro, tomando el reloj base de la tarjeta para sacar una señal `SC` estable (por ejemplo, a unos 100 kHz).
 * Diseñar la máquina de estados del Shift Register para que cuadre exactamente con las subidas y bajadas del reloj.
 * Mapear las direcciones de memoria en el procesador para poder leer y escribir los datos desde C.
-* Armar el `while(1)` en el firmware de la Maestra para que haga el *polling* de la Esclava en cada ciclo del juego.
-* Hacer un *Testbench* en GTKWave conectando una Maestra y una Esclava simuladas. Hay que verificar que los 8 ciclos de reloj se cumplan perfecto y la línea quede estable antes d
+* Armar el `while(1)` en el firmware de el Maestro para que haga el *polling* de el Esclavo en cada ciclo del juego.
+* Hacer un *Testbench* en GTKWave conectando un Maestro y un Esclavo simulados. Hay que verificar que los 8 ciclos de reloj se cumplan perfecto y la línea quede estable antes d
 
 
 ---

@@ -252,7 +252,8 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 * ## 9. Flujo de señales- maestro
   <img width="1362" height="1619" alt="imagen" src="https://github.com/user-attachments/assets/8d8237f4-eba9-4f47-89d0-eaacdd2b555b" />
   ## 10. Flujo de señales- esclavo
-  
+  <img width="1415" height="2034" alt="imagen" src="https://github.com/user-attachments/assets/64aab792-67b9-4a04-9abd-1f62bff6f2a2" />
+
   ## 11.Maquina de estados
 <img width="1602" height="1064" alt="imagen" src="https://github.com/user-attachments/assets/3c9cd2b3-d701-4f2d-9cb3-d2b7fbab30d6" />
 

@@ -1,10 +1,6 @@
 # Multijugador SIO (Maestro-Esclavo)
 Módulo de comunicación síncrona Maestro-Esclavo basado en el protocolo SIO (Serial I/O) para la interconexión multijugador entre FPGAs. Proyecto integrador de consola retro SoC (RISC-V) - Digital 1.
 
-## Diagrama de flujo del controlador multijugador de Red 
-Se desceribe el funcionamiento del sistema de comunicación multijugador implementado entre dos FPGA mediante un protocolo SIO síncrono con arquitectura Maestro–Esclavo. El propósito del controlador es permitir el intercambio de información asociada al estado del juego entre dos consolas con pantallas independientes, manteniendo la sincronización de los jugadores durante la ejecución del videojuego.
-![Texto alternativo](imagenes/Diagrama_flujo.png)
-
 # Protocolo de comunicación
 
 ## 1. Objetivo
@@ -226,6 +222,12 @@ Ciclo 8: M0 ↔ S0
 
 
 ```
+
+## Diagrama de flujo del controlador multijugador de Red 
+Se desceribe el funcionamiento del sistema de comunicación multijugador implementado entre dos FPGA mediante un protocolo SIO síncrono con arquitectura Maestro–Esclavo. El propósito del controlador es permitir el intercambio de información asociada al estado del juego entre dos consolas con pantallas independientes, manteniendo la sincronización de los jugadores durante la ejecución del videojuego.
+![Texto alternativo](imagenes/Diagrama_flujo.png)
+
+
 ### 7. DATAPATH
 <img width="1978" height="1305" alt="imagen" src="https://github.com/user-attachments/assets/ad1e7e9f-b01e-40fc-808a-cffe1ed3388a" />
 
@@ -249,12 +251,13 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 ### 8.4 Equipo de `UART` y otros protocolos (`I2C_Master`, `spi_flash_ctrl`)
 *   **Dificultad:** Todos los módulos de comunicación necesitan conectar cables físicos a los pines de expansión de la FPGA. Si no nos hablamos, podríamos terminar asignando los mismos pines en el archivo de restricciones (`.cst`) para el TX del UART o el I2C, y para el reloj `SC` de nuestro SIO, causando un cortocircuito lógico.
 *   **Solución:** Al abandonar nosotros el protocolo UART y usar SIO, ya liberamos carga en el bus y evitamos duplicar módulos. Para solucionar el tema físico, crearemos un documento compartido del "Pinout" general del proyecto para reservar oficialmente nuestros 3 pines físicos (`SC`, `SI`, `SO`) y asegurar que ningún otro grupo los intente usar.
+### FMS
 * ## 9. Flujo de señales- maestro
-  <img width="1362" height="1619" alt="imagen" src="https://github.com/user-attachments/assets/8d8237f4-eba9-4f47-89d0-eaacdd2b555b" />
-  ## 10. Flujo de señales- esclavo
-  <img width="1415" height="2034" alt="imagen" src="https://github.com/user-attachments/assets/64aab792-67b9-4a04-9abd-1f62bff6f2a2" />
+![Texto alternativo](imagenes/FMS_Maestro.drawio.png)
+*  ## 10. Flujo de señales- esclavo
+![Texto alternativo](imagenes/FMS_Esclavo.png)
 
-  ## 11.Maquina de estados
+ *  ## 11.Maquina de estados
 <img width="1602" height="1064" alt="imagen" src="https://github.com/user-attachments/assets/3c9cd2b3-d701-4f2d-9cb3-d2b7fbab30d6" />
 
 

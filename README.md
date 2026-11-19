@@ -253,7 +253,7 @@ Al cambiar la arquitectura a un modelo Maestro-Esclavo (SIO), nuestro módulo in
 *   **Solución:** Al abandonar nosotros el protocolo UART y usar SIO, ya liberamos carga en el bus y evitamos duplicar módulos. Para solucionar el tema físico, crearemos un documento compartido del "Pinout" general del proyecto para reservar oficialmente nuestros 3 pines físicos (`SC`, `SI`, `SO`) y asegurar que ningún otro grupo los intente usar.
 ### FMS
 * ## 9. Flujo de señales- maestro
-![Texto alternativo](imagenes/FMS_Maestro.drawio.png)
+![Texto alternativo](imagenes/FMS_Maestro.png)
 *  ## 10. Flujo de señales- esclavo
 ![Texto alternativo](imagenes/FMS_Esclavo.png)
 
